@@ -2,7 +2,7 @@
 
 /!\ This repository is still being updated. 
 
-<img src="images/study-design.png"  />
+<img src="images/study-design-white.png"  />
 
 Based on the [following paper](https://ieeexplore.ieee.org/abstract/document/10635273): 
 
