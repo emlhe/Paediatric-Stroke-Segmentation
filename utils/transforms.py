@@ -5,10 +5,10 @@ def preprocess(brain_mask=None, crop=None):
     return tio.Compose([
                 tio.ToCanonical(), # "Reorder the data to be closest to canonical (RAS+) orientation."
                 tio.Resample('t1'), # Make sure all label maps have same affine as t1
-                # tio.Resample(1),
+                tio.Resample(1),
                 tio.ZNormalization(masking_method=brain_mask),
                 tio.CropOrPad(crop, mask_name=brain_mask),
-                # tio.OneHot(num_classes = 2),
+                tio.OneHot(num_classes = 2),
                 # tio.EnsureShapeMultiple((32,32,32)), # for the U-Net : doit être un multiple de 2**nombre de couches
                 ])
         

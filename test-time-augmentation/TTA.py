@@ -78,7 +78,7 @@ n_segmentations = 10
 current_dateTime = datetime.now()
 id_run = config_file + sample + "_weights-" + weights_id + "_" + str(current_dateTime.day) + "-" + str(current_dateTime.month) + "-" + str(current_dateTime.year) + "-" + str(current_dateTime.hour) + str(current_dateTime.minute) + str(current_dateTime.second) 
 model_weights_path = str(sorted(weigts_dir.glob('**/*'+weights_id+'.pth'))[0])
-out_path=f"/home/emma/Projets/stroke_lesion_segmentation_v2/out-predictions/TTA/{id_run}/"
+out_path=f"/out-predictions/TTA/{id_run}/"
 print(f"Inference with weights : {model_weights_path}")
 
 ##############

@@ -115,7 +115,7 @@ for i in range(len(weights_ids)):
     print(f"Test images in : {img_test_dir}")
     brain_masks_train_dir=Path(rootdir_train_brain_mask)
     print(f"Train brain mask in : {brain_masks_train_dir}")
-    brain_masks_test_dir = Path("/home/emma/data/IRM-CAP/derivatives/Brain_extraction/FS-SynthStrip/CAP-stroke")
+    brain_masks_test_dir = Path("/FS-SynthStrip/")
     print(f"Test brain mask in : {brain_masks_test_dir}")
     
 
@@ -306,15 +306,15 @@ for i in range(len(weights_ids)):
     print(f"\t# Mean HD95 = {df_test.loc[:, 'HD 95'].mean()} +- {df_test.loc[:, 'HD 95'].std()}")
     print(f"\t# Mean NSD = {df_test.loc[:, 'surface DICE'].mean()} +- {df_test.loc[:, 'surface DICE'].std()}")
 
-    # print("# Validation")
-    # df_val = inference(val_subjects_dataset, metric = True, df = df_labels, data="val", patch = ctx["patch"], transform = transform_val)
-    # df_val.to_csv("./out-predictions/"+id_run+"/scores_val.csv", index=False)
-    # print(df_val)
-    # print(f"\t# Mean DICE = {df_val.loc[:, 'DICE'].mean()} +- {df_val.loc[:, 'DICE'].std()}")
-    # print(f"\t# Mean HD95 = {df_val.loc[:, 'HD 95'].mean()} +- {df_val.loc[:, 'HD 95'].std()}")
+    print("# Validation")
+    df_val = inference(val_subjects_dataset, metric = True, df = df_labels, data="val", patch = ctx["patch"], transform = transform_val)
+    df_val.to_csv("./out-predictions/"+id_run+"/scores_val.csv", index=False)
+    print(df_val)
+    print(f"\t# Mean DICE = {df_val.loc[:, 'DICE'].mean()} +- {df_val.loc[:, 'DICE'].std()}")
+    print(f"\t# Mean HD95 = {df_val.loc[:, 'HD 95'].mean()} +- {df_val.loc[:, 'HD 95'].std()}")
     
-    # print("# Training")
-    # df_train = inference(train_subjects_dataset, metric = True, df = df_labels, data="train", patch = ctx["patch"], transform = transform_train)
-    # df_train.to_csv("./out-predictions/"+id_run+"/scores_train.csv", index=False)
+    print("# Training")
+    df_train = inference(train_subjects_dataset, metric = True, df = df_labels, data="train", patch = ctx["patch"], transform = transform_train)
+    df_train.to_csv("./out-predictions/"+id_run+"/scores_train.csv", index=False)
 
 #'''

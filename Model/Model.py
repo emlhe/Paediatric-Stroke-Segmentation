@@ -1,7 +1,4 @@
 import lightning as pl
-import torchio as tio
-import torch
-import monai
 from torchmetrics.classification import Dice
 import numpy as np 
 import torchvision

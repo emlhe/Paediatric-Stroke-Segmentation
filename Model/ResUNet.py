@@ -141,7 +141,7 @@ class Res_UNet(nn.Module):
         # if pretrained :
         #     # model = monai.networks.nets.ResNet('basic' , [2,2,2,2], [2,2,2,2], spatial_dims=3, n_input_channels=1 )
         #     net_dict = self.model.state_dict() 
-        #     pretrain = torch.load("/home/emma/Projets/dl_brain_MRI_segmentation/models_weights/MedNet/resnet_10_23dataset.pth")           
+        #     pretrain = torch.load("/models_weights/MedNet/resnet_10_23dataset.pth")           
         #     pretrain_dict = {k: v for k, v in pretrain['state_dict'].items() if k in net_dict.keys()}
         #     net_dict.update(pretrain_dict)
         #     self.model.load_state_dict(net_dict)

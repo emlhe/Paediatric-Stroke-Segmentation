@@ -21,9 +21,9 @@ from tqdm.auto import tqdm
 import matplotlib.pyplot as plt 
 
 import sys
-sys.path.append("/home/emma/Projets/stroke_lesion_segmentation_v2/")
-sys.path.append("/home/emma/Projets/stroke_lesion_segmentation_v2/config_files/")
-sys.path.append("/home/emma/Projets/stroke_lesion_segmentation_v2/utils/")
+sys.path.append("./")
+sys.path.append("/config_files/")
+sys.path.append("/utils/")
 from transforms import augment, preprocess
 from get_subjects import get_subjects
 from load_model import load

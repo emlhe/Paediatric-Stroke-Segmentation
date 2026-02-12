@@ -8,7 +8,7 @@ def get_subjects(image_paths, label_paths=None, subsample=False, brain_mask_path
     for image_path in image_paths:
         subject_id = str(image_path).split("/")[-1].split("_T1w")[0]
         if subsample == True :
-            df = pd.read_csv("/home/emma/Projets/stroke_lesion_segmentation_v2/config_files/file.csv")
+            df = pd.read_csv("/config_files/file.csv")
             if subject_id in df['sub_ids'].to_list():
                 
                 # sub_df = df[df['Subject ID'] == subject_id]
