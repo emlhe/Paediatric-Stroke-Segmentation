@@ -1,0 +1,23 @@
+{
+    "command": "train",
+    "experiment_name": "unet-stroke-segmentation-cap-from-scratch",
+    "net_model" : "resunet",
+    "num_epochs": 200, 
+    "comment": "",
+    "batch_size": 16,
+    "patch": true,
+    "train_val_ratio": 0.8,
+    "patch_size": [96,96,96],
+    "queue_length" : 100,
+    "samples_per_volume" : 8,
+    "num_workers": 7,
+    "initial_lr" : 0.0001,
+    "adaptative_lr" : false,
+    "write_images": true,
+    "seed" : 42,
+    "dropout" : 0.2,
+    "loss_type" : "DiceCE",
+    "channels" : "resnet18",
+    "overfit_batch": 0,
+    "ft_weights": false
+}

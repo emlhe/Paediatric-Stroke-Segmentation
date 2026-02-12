@@ -1,0 +1,24 @@
+{ 
+  "rootdir_train_img": "",
+  "rootdir_train_labels": "",
+  "rootdir_train_brain_mask": "",
+  "rootdir_test-cap": "",
+  "rootdir_test_labels-cap": "",
+  "rootdir_test_brain_mask": "",
+ "channel_names": {
+   "0": "T1"
+ }, 
+ "labels": {
+    "background":0,
+    "stroke":1
+ }, 
+ "file_ending": ".nii.gz",
+ "suffixe_img-train": "_synthstripped",
+ "suffixe_labels-train": "lesion_mask",
+ "suffixe_brain_mask-train": "_brain-mask",
+ "suffixe_img-test": "gz_synthstripped",
+ "suffixe_labels-test": "_mask",
+ "suffixe_brain_mask-test": "_brain-mask",
+ "subset": false,
+ "ft_subjects": false
+ }
