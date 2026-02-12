@@ -148,7 +148,7 @@ for i in range(len(weights_ids)):
     print("\n# DATA TRANFORMATION\n")
 
     transform_train = tio.Compose([preprocess(brain_mask='brain_mask'), augment()])
-    transform_val = tio.Compose([preprocess(brain_mask='brain_mask')])
+    transform_val = tio.Compose([preprocess(brain_mask='brain_mask'), augment()])
     transform_test = tio.Compose([preprocess(brain_mask='brain_mask')])
 
     #######################
@@ -164,13 +164,9 @@ for i in range(len(weights_ids)):
     generator = torch.Generator().manual_seed(seed)
     train_subjects, val_subjects = random_split(train_subjects, splits, generator=generator)
 
-    train_subjects_dataset = tio.SubjectsDataset(train_subjects)#, transform=transform_train)
-    val_subjects_dataset = tio.SubjectsDataset(val_subjects)#, transform=transform_val)
-    test_subjects_dataset = tio.SubjectsDataset(test_subjects)#, transform=transform_test)
-
-    for subject in test_subjects_dataset._subjects:
-        print("####")
-        print(subject)
+    train_subjects_dataset = tio.SubjectsDataset(train_subjects, transform=transform_train)
+    val_subjects_dataset = tio.SubjectsDataset(val_subjects, transform=transform_val)
+    test_subjects_dataset = tio.SubjectsDataset(test_subjects, transform=transform_test)
 
     print(f"Training: {len(train_subjects_dataset)}")
     print(f"Validation: {len(val_subjects_dataset)}")     
@@ -180,7 +176,7 @@ for i in range(len(weights_ids)):
     #   MODEL   #
     #############
     print(f"\n# MODEL : {net_model}\n")
-
+    print(Path(model_weights_path))
     model = load(model_weights_path,net_model, lr, dropout, loss_type, num_classes, channels, num_epochs)
 
     #################
@@ -210,16 +206,14 @@ for i in range(len(weights_ids)):
                 else:
                     new_shape.append(s) 
             print(new_shape)
-            transform_test = tio.Compose([preprocess(brain_mask='brain_mask', crop=new_shape)])
-            print(subject)
-            subject = transform_test(subject)
+            subject = transform(subject)
             print(subject['t1'][tio.DATA].shape)
             
             if patch: 
                 grid_sampler = tio.inference.GridSampler(
                     subject,
                     patch_size,
-                    patch_overlap=10,
+                    patch_overlap=32,
                 )
                 aggregator = tio.inference.GridAggregator(grid_sampler)
                 loader = DataLoader(grid_sampler)
@@ -229,12 +223,12 @@ for i in range(len(weights_ids)):
 
             with torch.no_grad():
                 if patch: 
-                    print("Patch")      
                     for batch in tqdm(loader, unit='batch'):
                         input = batch['t1'][tio.DATA]
                         print(input.shape)
                         logits = model.net(input)
                         labels = logits.argmax(dim=tio.CHANNELS_DIMENSION, keepdim=True)
+                        labels = monai.transforms.KeepLargestConnectedComponent(applied_labels=[1])(labels)
                         locations = batch[tio.LOCATION]
                         aggregator.add_batch(labels, locations)                     
                 else:
@@ -243,6 +237,7 @@ for i in range(len(weights_ids)):
                     print(input.shape)
                     logits = model.net(input)
                     labels = logits.argmax(dim=tio.CHANNELS_DIMENSION, keepdim=True) 
+                    labels = monai.transforms.KeepLargestConnectedComponent(applied_labels=[1])(labels)
                         
             if patch:
                 output_tensor = aggregator.get_output_tensor().to(torch.int64).unsqueeze(axis=0)
@@ -259,6 +254,7 @@ for i in range(len(weights_ids)):
                 print(f"outputs_one_hot shape : {outputs_one_hot.shape}")
                 outputs_one_hot = outputs_one_hot.permute(0, 4, 1, 2, 3)
                 print(f"outputs_one_hot shape permuted: {outputs_one_hot.shape}")
+                
 
                 get_dice(outputs_one_hot.to(model.device), gt_tensor.to(model.device))
                 get_hd(outputs_one_hot.to(model.device), gt_tensor.to(model.device))
@@ -270,7 +266,9 @@ for i in range(len(weights_ids)):
                 hd = get_hd.aggregate().cpu().numpy()[0]
                 print(f"HD : {hd[0]}")
                 get_hd.reset()
-                new_data = [[subject['subject']] + [dice[0]] + [hd[0]]]
+                surface_dice =  monai.metrics.compute_surface_dice(outputs_one_hot.to(model.device), gt_tensor.to(model.device), class_thresholds=[1]).cpu().numpy()[0]
+                print(f"surface DICE : {surface_dice[0]}")
+                new_data = [[subject['subject']] + [dice[0]] + [hd[0]]+ [surface_dice[0]]]
                 print(pd.DataFrame(data=new_data, columns = df.columns))
                 df = pd.concat([df, pd.DataFrame(data=new_data, columns = df.columns)], ignore_index=True)
                
@@ -297,22 +295,23 @@ for i in range(len(weights_ids)):
         if metric:
             return df
 
-    df_labels = pd.DataFrame(columns=["Subjects"] + ["DICE"] + ["HD 95"])
+    df_labels = pd.DataFrame(columns=["Subjects"] + ["DICE"] + ["HD 95"] + ["surface DICE"])
 
-    # print("# Test")
-    # df_labels_test = pd.DataFrame(columns=["Subjects", "DICE", "HD 95"])
-    # df_test = inference(test_subjects_dataset, metric = True, df = df_labels_test, data="test", patch = ctx["patch"], transform = transform_test)
-    # df_test.to_csv("./out-predictions/"+id_run+"/scores_test.csv", index=False)
-    # print(df_test)
-    # print(f"\t# Mean DICE = {df_test.loc[:, 'DICE'].mean()} +- {df_test.loc[:, 'DICE'].std()}")
-    # print(f"\t# Mean HD95 = {df_test.loc[:, 'HD 95'].mean()} +- {df_test.loc[:, 'HD 95'].std()}")
+    print("# Test")
+    df_labels_test = pd.DataFrame(columns=["Subjects", "DICE", "HD 95", "surface DICE"])
+    df_test = inference(test_subjects_dataset, metric = True, df = df_labels_test, data="test", patch = ctx["patch"], transform = transform_test)
+    df_test.to_csv("./out-predictions/"+id_run+"/scores_test.csv", index=False)
+    print(df_test)
+    print(f"\t# Mean DICE = {df_test.loc[:, 'DICE'].mean()} +- {df_test.loc[:, 'DICE'].std()}")
+    print(f"\t# Mean HD95 = {df_test.loc[:, 'HD 95'].mean()} +- {df_test.loc[:, 'HD 95'].std()}")
+    print(f"\t# Mean NSD = {df_test.loc[:, 'surface DICE'].mean()} +- {df_test.loc[:, 'surface DICE'].std()}")
 
     # print("# Validation")
-    df_val = inference(val_subjects_dataset, metric = True, df = df_labels, data="val", patch = ctx["patch"], transform = transform_val)
-    df_val.to_csv("./out-predictions/"+id_run+"/scores_val.csv", index=False)
-    print(df_val)
-    print(f"\t# Mean DICE = {df_val.loc[:, 'DICE'].mean()} +- {df_val.loc[:, 'DICE'].std()}")
-    print(f"\t# Mean HD95 = {df_val.loc[:, 'HD 95'].mean()} +- {df_val.loc[:, 'HD 95'].std()}")
+    # df_val = inference(val_subjects_dataset, metric = True, df = df_labels, data="val", patch = ctx["patch"], transform = transform_val)
+    # df_val.to_csv("./out-predictions/"+id_run+"/scores_val.csv", index=False)
+    # print(df_val)
+    # print(f"\t# Mean DICE = {df_val.loc[:, 'DICE'].mean()} +- {df_val.loc[:, 'DICE'].std()}")
+    # print(f"\t# Mean HD95 = {df_val.loc[:, 'HD 95'].mean()} +- {df_val.loc[:, 'HD 95'].std()}")
     
     # print("# Training")
     # df_train = inference(train_subjects_dataset, metric = True, df = df_labels, data="train", patch = ctx["patch"], transform = transform_train)

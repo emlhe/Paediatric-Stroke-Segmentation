@@ -4,6 +4,7 @@ import torch
 import monai
 from torchmetrics.classification import Dice
 import numpy as np 
+import torchvision
 
 class Model(pl.LightningModule):
     def __init__(self, net, criterion, learning_rate, optimizer_class, epochs):
@@ -38,6 +39,8 @@ class Model(pl.LightningModule):
         dice = self.dice(y_hat, y.int())
         self.log("train_dice", dice, prog_bar=True, on_epoch=True, reduce_fx = "mean")
         self.log("train_loss", loss, prog_bar=True)
+        sample_imgs, _ = self.prepare_batch(batch)
+        self.logger.experiment.add_image('first_batch_images', torchvision.utils.make_grid(torchvision.transforms.functional.rotate(self.normalize_to_0_1(sample_imgs[:,:,:,:,64]),90)), 0)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -47,3 +50,8 @@ class Model(pl.LightningModule):
         self.log("val_dice", dice, prog_bar=True, on_epoch=True, reduce_fx = "mean")
         self.log("val_loss", loss, prog_bar=True)
         return loss
+    
+    def normalize_to_0_1(self, volume):
+        max_val = volume.max()
+        min_val = volume.min()
+        return (volume - min_val) / (max_val - min_val)

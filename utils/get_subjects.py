@@ -6,28 +6,34 @@ def get_subjects(image_paths, label_paths=None, subsample=False, brain_mask_path
     subjects = []
     i=0
     for image_path in image_paths:
-        subject_id = str(image_path).split("/")[-1].split("_")[0]
+        subject_id = str(image_path).split("/")[-1].split("_T1w")[0]
         if subsample == True :
-            df = pd.read_csv("/home/emma/Projets/stroke_lesion_segmentation_v2/config_files/df_atlas.csv")
-            df_other_lesions = pd.read_csv("/home/emma/Projets/stroke_lesion_segmentation_v2/config_files/other_lesions_atlas.csv")
-            if not subject_id in df_other_lesions['subject'].to_list():
-                sub_df = df[df['Subject ID'] == subject_id]
-                if not (sub_df.iloc[0, sub_df.columns.get_loc('lesion_size')] < 0.57 and sub_df.iloc[0, sub_df.columns.get_loc('mean_lesion_intensity')] > 0.64):
-                    subject = MySubject(
-                        t1=tio.ScalarImage(image_path),
-                        subject=subject_id, 
-                    )
+            df = pd.read_csv("/home/emma/Projets/stroke_lesion_segmentation_v2/config_files/file.csv")
+            if subject_id in df['sub_ids'].to_list():
+                
+                # sub_df = df[df['Subject ID'] == subject_id]
+                # if not (sub_df.iloc[0, sub_df.columns.get_loc('lesion_size')] < 0.57 and sub_df.iloc[0, sub_df.columns.get_loc('mean_lesion_intensity')] > 0.64):
+                subject = MySubject(
+                    t1=tio.ScalarImage(image_path),
+                    subject=subject_id, 
+                )
+                if brain_mask_paths != None:
+                    subject.add_image(tio.LabelMap(brain_mask_paths[i]), "brain_mask")
+                if label_paths != None:
+                    subject.add_image(tio.LabelMap(label_paths[i]), "seg")
+                subjects.append(subject)
+                i+=1
         else:
             subject = MySubject(
                     t1=tio.ScalarImage(image_path),
                     subject=subject_id
                 )
-        if brain_mask_paths != None:
-            subject.add_image(tio.LabelMap(brain_mask_paths[i]), "brain_mask")
-        if label_paths != None:
-            subject.add_image(tio.LabelMap(label_paths[i]), "seg")
-        subjects.append(subject)
-        i+=1
+            if brain_mask_paths != None:
+                subject.add_image(tio.LabelMap(brain_mask_paths[i]), "brain_mask")
+            if label_paths != None:
+                subject.add_image(tio.LabelMap(label_paths[i]), "seg")
+            subjects.append(subject)
+            i+=1
     return subjects
 
 

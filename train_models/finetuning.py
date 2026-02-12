@@ -10,6 +10,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from torch.utils.tensorboard import SummaryWriter
 from lightning.pytorch.callbacks import LearningRateMonitor
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+from lightning.pytorch.callbacks import ModelCheckpoint
 import torchvision
 
 import numpy as np
@@ -63,12 +64,12 @@ with open(f"./config_files/{config_file}.json") as f:
 with open(f"config_files/{data_infos}.json") as f:
     data_info = json.load(f)
     channel = data_info["channel_names"]["0"]
-    rootdir_ft_img = data_info["rootdir-cap"]
-    rootdir_ft_labels = data_info["rootdir_labels-cap"]
-    rootdir_ft_brain_mask = data_info["rootdir_brain_mask-cap"]
-    suffixe_img_ft = data_info["suffixe_img-cap"]
-    suffixe_labels_ft = data_info["suffixe_labels-cap"]
-    suffixe_brain_mask_ft = data_info["suffixe_brain_mask-cap"]
+    rootdir_ft_img = data_info["rootdir_train_img"]
+    rootdir_ft_labels = data_info["rootdir_train_labels"]
+    rootdir_ft_brain_mask = data_info["rootdir_train_brain_mask"]
+    suffixe_img_ft = data_info["suffixe_img-train"]
+    suffixe_labels_ft = data_info["suffixe_labels-train"]
+    suffixe_brain_mask_ft = data_info["suffixe_brain_mask-train"]
     num_classes = len(data_info["labels"])
     file_ending = data_info["file_ending"]
     subsample = data_info["subset"]
@@ -251,6 +252,11 @@ print(f"\n# MODEL : {net_model}\n")
 model = load(model_weights_path,net_model, lr, dropout, loss_type, num_classes, channels, num_epochs)
 
 lr_monitor = LearningRateMonitor(logging_interval='step')
+checkpoint_callback = ModelCheckpoint(
+        monitor='val_loss',
+        dirpath=save_model_weights,
+        save_weights_only=True,
+        filename='checkpoint-{epoch:02d}-{val_loss:.2f}')
 
 trainer = pl.Trainer(
     max_epochs=num_epochs, # Number of pass of the entire training set to the network
@@ -261,7 +267,7 @@ trainer = pl.Trainer(
     logger=logger,
     log_every_n_steps=10,
     overfit_batches=overfit_batch,
-    # callbacks=[EarlyStopping(monitor="val_loss", mode="min", min_delta=0.0001, patience = 10)], #lr_monitor
+    callbacks=[checkpoint_callback]#EarlyStopping(monitor="val_loss", mode="min", min_delta=0.0001, patience = 10)], #lr_monitor
     # limit_train_batches=0.1 # For fast training
 )
 

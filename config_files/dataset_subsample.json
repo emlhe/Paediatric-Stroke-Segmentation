@@ -1,7 +1,7 @@
 { 
-  "rootdir_train_img": "/home/emma/data/DATABASES/ATLAS/ATLAS_R2.0/ATLAS_2/Training",
-  "rootdir_train_labels": "/home/emma/data/DATABASES/ATLAS/ATLAS_R2.0/ATLAS_2/Training",
-  "rootdir_train_brain_mask": "/home/emma/data/DATABASES/ATLAS/ATLAS_R2.0/ATLAS_2/Training",
+  "rootdir_train_img": "/home/emma/data/DATABASES/ATLAS/ATLAS_R2.0/derivatives/synthstrip",
+  "rootdir_train_labels": "/home/emma/data/DATABASES/ATLAS/ATLAS_R2.0/rawdata/Training",
+  "rootdir_train_brain_mask": "/home/emma/data/DATABASES/ATLAS/ATLAS_R2.0/derivatives/synthstrip",
   "rootdir_test-cap": "/home/emma/data/IRM-CAP/derivatives/Brain_extraction/FS-SynthStrip/CAP-stroke",
   "rootdir_test_labels-cap": "/home/emma/data/IRM-CAP/derivatives/Brain_extraction/FS-SynthStrip/CAP-stroke",
   "rootdir_test_brain_mask": "/home/emma/data/IRM-CAP/derivatives/Brain_extraction/FS-SynthStrip/CAP-stroke",

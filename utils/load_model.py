@@ -57,7 +57,11 @@ def load(weights_path, model, lr, dropout, loss_type, n_class, channels, epochs)
     )
 
     if weights_path != None:
-        model.load_state_dict(torch.load(weights_path, weights_only=True))
-        # model.eval() # deactivate dropout layers https://discuss.pytorch.org/t/performance-highly-degraded-when-eval-is-activated-in-the-test-phase/3323
+        print(f"weights path: {weights_path}")
+        state_dict = torch.load(weights_path, weights_only=True)#"/home/emma/Projets/stroke_lesion_segmentation_v2/weights/config_unet_atlas_subset_21-11-2025-174334/best_model_checkpoint-epoch=75-val_loss=0.55.ckpt", weights_only=True)
+        # state_dict = torch.load("/home/emma/Projets/stroke_lesion_segmentation_v2/weights/config_unet_atlas_subset_21-11-2025-174334/best_model_checkpoint-epoch=75-val_loss=0.55.ckpt", weights_only=True)
+        # state_dict = torch.load("weights/config_resunet_FT_CAP_weights-28-10-2024-73119_28-10-2024-164723/checkpoint-epoch=64-val_loss=0.17.ckpt")
+        model.load_state_dict(state_dict)
+        model.eval() # deactivate dropout layers https://discuss.pytorch.org/t/performance-highly-degraded-when-eval-is-activated-in-the-test-phase/3323
     return model
 

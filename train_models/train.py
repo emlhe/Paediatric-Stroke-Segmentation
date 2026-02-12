@@ -12,6 +12,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from torch.utils.tensorboard import SummaryWriter
 from lightning.pytorch.callbacks import LearningRateMonitor
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+from lightning.pytorch.callbacks import ModelCheckpoint
 import torchvision
 
 import pandas as pd
@@ -58,14 +59,11 @@ from utils.load_model import load
 #             subject = self._transform(subject)
 #         # Here I've changed the return to a dictionary rather than a Subject
 #         return subject.to_dict()
-    
+
 #     def get_subjects(self):
-
 #         return self._subjects
-
-
-config_files = ["config_unet_atlas"]
-data_infos_files = ["dataset"]
+config_files = ["config_resunet_atlas"]
+data_infos_files = ["dataset_subsample"]
 
 for i in range(len(config_files)):
     config_file = config_files[i]
@@ -181,23 +179,6 @@ for i in range(len(config_files)):
     train_subjects_dataset = tio.SubjectsDataset(train_subjects)
     print('training dataset size: ', len(train_subjects), ' subjects')
 
-    # train_subjects_ids = []
-    # for s in train_subjects_dataset:
-    #     train_subjects_ids.append(s['subject'])
-    # import pandas
-    # df = pandas.DataFrame(data={"sub_ids": train_subjects_ids})
-    # df.to_csv("./file.csv", sep=',',index=False)
-
-    #######################
-    #   ONE SUBJECT PLOT  #
-    #######################
-    # print("\n# ONE SUBJECT PLOT\n")
-
-    # sub_tmp = nib.Nifti1Image(test_healthy_subjects_dataset[1]["t1"]['data'].numpy().squeeze(), test_healthy_subjects_dataset[1]["t1"]['affine'])
-    # plotting.plot_img(sub_tmp, display_mode='mosaic')
-    # plt.show()
-
-
     ##########################
     #   DATA TRANFORMATION   #
     ##########################
@@ -221,9 +202,6 @@ for i in range(len(config_files)):
         splits = num_train_subjects, num_val_subjects
         generator = torch.Generator().manual_seed(seed)
         train_subjects, val_subjects = random_split(train_subjects, splits, generator=generator)
-
-        train_subjects_dataset = tio.SubjectsDataset(train_subjects, transform=transform_train)
-        val_subjects_dataset = tio.SubjectsDataset(val_subjects, transform=transform_val)
     
     else:
         train_subjects = []
@@ -271,18 +249,6 @@ for i in range(len(config_files)):
             num_workers=num_workers,
         )
 
-        # generator_train = patch_sampler(train_subjects[0])
-        # # generator_test = patch_sampler(test_subjects[0])
-        # img_train=next(iter(generator_train))
-        # # img_test=next(iter(generator_test))
-        # img_train.plot()
-        # plt.show()
-        # # img_test.plot()
-        # plt.show()
-        # img_grid = torchvision.utils.make_grid(img_train["t1"]['data'][:,:,:,49])
-        # writer.add_image('patch_image_train', img_train["t1"]['data'][:,:,:,49])
-        # img_grid = torchvision.utils.make_grid(img_test["t1"]['data'][:,:,:,49])
-        # writer.add_image('patch_image_test', img_test["t1"]['data'][:,:,:,49])
     else:
         print("No patch")
         val_set = val_subjects_dataset
@@ -297,45 +263,32 @@ for i in range(len(config_files)):
 
     train_dataloader = tio.SubjectsLoader(dataset=train_set, batch_size= batch_size, num_workers=0, pin_memory=True)
     val_dataloader = tio.SubjectsLoader(dataset=val_set, batch_size=batch_size, num_workers=0, pin_memory=True)
-
-    batch = next(iter(train_dataloader))
-    print(type(batch))  # Verif see comment line 39
-    assert batch.__class__ is dict
-
-    img = next(iter(train_dataloader))
-    print(img['t1']['data'].shape)
-    img_grid = torchvision.utils.make_grid(img['t1']['data'][:,:,:,:,64])
-    writer.add_image('images_train', img_grid)
   
     #############
     #   MODEL   #
     #############
     print(f"\n# MODEL : {net_model}\n")
 
-    # model = load("/home/emma/Projets/stroke_lesion_segmentation_v2/weights/config_unet_atlas_subset_23-8-2024-153932.pth",net_model, lr, dropout, loss_type, num_classes, channels, num_epochs)
-
     model = load(None, net_model, lr, dropout, loss_type, num_classes, channels, num_epochs)
 
-
     ## Trainer 
-
-    # early_stopping = pl.callbacks.early_stopping.EarlyStopping(
-    #     monitor="val_loss",
-    #     patience = 5,
-    # )
-
     lr_monitor = LearningRateMonitor(logging_interval='step')
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_loss',
+        dirpath=save_model_weights,
+        save_weights_only=True,
+        filename='best_model_checkpoint-{epoch:02d}-{val_loss:.2f}')
 
     trainer = pl.Trainer(
         max_epochs=num_epochs, # Number of pass of the entire training set to the network
         # deterministic=True, #Might make your system slower, but ensures reproducibility
         accelerator=device, 
         devices=1,
-        precision=16,
+        precision="32-true", # precision="16-mixed",
         logger=logger,
         log_every_n_steps=10,
         overfit_batches=overfit_batch,
-        callbacks=[EarlyStopping(monitor="val_loss", mode="min", min_delta=0.0001, patience = 10)], #lr_monitor
+        callbacks=[EarlyStopping(monitor="val_loss", mode="min", min_delta=0.0001, patience = 10), checkpoint_callback], #lr_monitor
         # limit_train_batches=0.1 # For fast training
     )
 
@@ -356,7 +309,7 @@ for i in range(len(config_files)):
     #################
     print("\n# SAVE MODEL\n")
 
-    torch.save(model.state_dict(), save_model_weights_path)
+    torch.save(checkpoint_callback.best_model_path, save_model_weights_path)
 
     print("model saved in : " + save_model_weights_path)
 
